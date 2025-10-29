@@ -1,14 +1,48 @@
-# Node Authentication Trust System - Deployment Package
+# ML-Based Trust and Reputation System for Node Authentication
 
-## Overview
-ML-based trust and reputation system for node authentication using Support Vector Machine (SVM).
+A machine learning system for network intrusion detection using Support Vector Machine (SVM) to classify network connections as normal or anomalous, with an adaptive trust scoring mechanism.
+
+## Dataset
+
+**NSL-KDD Network Intrusion Detection Dataset**
+- 22,544 training samples
+- 41 features including protocol type, service, flags, and network statistics
+- Binary classification: Normal vs Anomaly
 
 ## Model Performance
-- **Accuracy**: 96.91%
-- **Precision**: 98.42%
-- **Recall**: 94.34%
-- **F1-Score**: 96.34%
-- **ROC-AUC**: 99.49%
+
+| Metric | Score |
+|--------|-------|
+| Accuracy | 96.91% |
+| Precision | 98.42% |
+| Recall | 94.34% |
+| F1-Score | 96.34% |
+| ROC-AUC | 99.49% |
+
+## ML Pipeline
+
+1. **Data Preprocessing**
+   - Label encoding for categorical features (protocol_type, service, flag)
+   - StandardScaler normalization for numerical features
+   - Train-test split (70-30) with stratification
+
+2. **Model Training**
+   - Algorithm: Support Vector Machine (SVM)
+   - Kernel: RBF (Radial Basis Function)
+   - Hyperparameters: C=10, gamma='scale'
+   - Cross-validation: 5-fold stratified
+
+3. **Trust Scoring**
+   - MinMaxScaler to convert predictions to 0-100 trust score
+   - Adaptive thresholds for action classification
+
+## Trust Score System
+
+| Range | Action | Description |
+|-------|--------|-------------|
+| 0-33 | BLOCK | High risk - Deny access |
+| 33-66 | MONITOR | Medium risk - Additional verification required |
+| 66-100 | ALLOW | Low risk - Grant access |
 
 ## Installation
 
@@ -16,45 +50,98 @@ ML-based trust and reputation system for node authentication using Support Vecto
 pip install -r requirements.txt
 ```
 
-## Quick Start
+## Usage
 
-```python
-from prediction_api import NodeAuthenticator
+### Streamlit Web Application
 
-# Initialize
-auth = NodeAuthenticator(model_dir='../models')
+Launch the interactive web interface:
 
-# Predict
-result = auth.predict(node_features)
-
-print(f"Action: {result['action']}")  # BLOCK, MONITOR, or ALLOW
-print(f"Trust Score: {result['trust_score']}/100")
+```bash
+cd streamlit_app
+streamlit run app.py
 ```
 
-## Trust Score Interpretation
+The web application provides:
+- CSV file upload for batch predictions
+- Interactive visualizations (trust score distribution, confidence levels, action breakdown)
+- Real-time prediction results with detailed metrics
+- Downloadable results in CSV format
 
-- **0-33 (Low Trust)**: BLOCK - High risk, deny access
-- **33-66 (Medium Trust)**: MONITOR - Moderate risk, additional verification needed
-- **66-100 (High Trust)**: ALLOW - Low risk, grant access
+### Python API
 
-## Files
+```python
+import pandas as pd
+from streamlit_app.utils.model_loader import ModelLoader
+from streamlit_app.utils.data_processor import DataProcessor
 
-- `model_metadata.json`: Model specifications and performance metrics
-- `prediction_api.py`: Python API for making predictions
-- `requirements.txt`: Required Python packages
-- `../models/`: Trained model and preprocessing objects
+# Load models
+loader = ModelLoader('../models')
+models = loader.load_all_models()
 
-## Production Deployment Checklist
+# Initialize processor
+processor = DataProcessor(
+    model=models['model'],
+    scaler=models['scaler'],
+    trust_scaler=models['trust_scaler'],
+    label_encoders=models['label_encoders'],
+    feature_names=models['feature_names']
+)
 
-- [ ] Set up monitoring for prediction latency
-- [ ] Implement logging for all predictions
-- [ ] Set up alerts for high false positive rates
-- [ ] Schedule periodic model retraining with new data
-- [ ] Implement A/B testing for model updates
-- [ ] Set up load balancing for high-throughput scenarios
-- [ ] Implement caching for repeated predictions
-- [ ] Add API authentication and rate limiting
+# Load and predict
+df = pd.read_csv('test_data.csv')
+results = processor.predict(df)
 
-## Support
+print(results[['prediction', 'confidence', 'trust_score', 'action']])
+```
 
-For questions or issues, refer to the main project documentation.
+### Test Data Generation
+
+Generate sample test datasets:
+
+```bash
+cd streamlit_app
+python generate_test_data.py
+```
+
+Creates 20 varied CSV test files in the `test/` directory with different attack patterns.
+
+## Project Structure
+
+```
+ml-node-authentication/
+├── data.csv                      # Training dataset
+├── project.ipynb                 # Complete ML pipeline and analysis
+├── requirements.txt              # Python dependencies
+├── rebuild_scaler.py             # Utility to rebuild feature scaler
+├── models/                       # Trained models and encoders
+│   ├── svm_optimized_model.pkl
+│   ├── feature_scaler.pkl
+│   ├── trust_scaler.pkl
+│   ├── label_encoders.pkl
+│   └── feature_names.pkl
+└── streamlit_app/                # Web application
+    ├── app.py                    # Main Streamlit application
+    ├── requirements.txt          # Streamlit dependencies
+    ├── utils/
+    │   ├── model_loader.py       # Model loading utilities
+    │   ├── data_processor.py     # Data preprocessing and prediction
+    │   └── visualizer.py         # Visualization components
+    └── test/                     # Test datasets
+        └── test1.csv ... test20.csv
+```
+
+## Requirements
+
+- Python 3.11+
+- pandas
+- numpy
+- scikit-learn
+- joblib
+- streamlit
+- plotly
+- matplotlib
+- seaborn
+
+## License
+
+This project uses the NSL-KDD dataset, which is publicly available for research purposes.
