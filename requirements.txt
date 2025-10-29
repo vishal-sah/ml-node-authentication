@@ -1,0 +1,18 @@
+# Core Data Science Libraries
+pandas
+numpy
+matplotlib
+seaborn
+
+# Machine Learning
+scikit-learn
+
+# Utilities
+joblib
+warnings
+
+# Web Framework
+streamlit
+
+# Visualization
+plotly
